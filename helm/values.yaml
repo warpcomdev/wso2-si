@@ -1,0 +1,39 @@
+image:
+  server:
+    repository: warpcomdev/wso2-si-server
+    tag: latest
+    pullPolicy: IfNotPresent
+  integrator:
+    repository: warpcomdev/wso2-si-integrator
+    tag: latest
+    pullPolicy: IfNotPresent
+  processor:
+    repository: warpcomdev/wso2-si-processor
+    tag: latest
+    pullPolicy: IfNotPresent
+
+resources:
+  server:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: "2"
+  integrator:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: "2"
+  processor:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: "2"
+
+replication:
+  initialCount: 1

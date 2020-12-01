@@ -1,0 +1,84 @@
+{{ $fullname := include "wso2si.fullname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-server
+  labels:
+    {{- include "wso2si.labels" . | nindent 4}}
+spec:
+  replicas: {{ .Values.replication.initialCount }}
+  {{- with .Values.replication.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      service: wso2si-server
+      {{- include "wso2si.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        service: wso2si
+        {{- include "wso2si.labels" .  | nindent 8 }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              {{- include "wso2si.selectorExpressions" . | nindent 14 }}
+            topologyKey: kubernetes.io/hostname
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: server
+        image: {{ .Values.image.server.repository }}:{{ .Values.image.server.tag }}
+        {{- with .Values.resources.server }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{ end }}
+        ports:
+        - containerPort: 9443
+          name: https
+        - containerPort: 9090
+          name: http
+        - containerPort: 7070
+          name: tcp7070
+        - containerPort: 7443
+          name: tcp7443
+        - containerPort: 9712
+          name: tcp9712
+        - containerPort: 7711
+          name: tcp7711
+        - containerPort: 7611
+          name: tcp7611
+        {{- with .Values.livenessProbe }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9090
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      volumes:
+      - name: varlog
+        emptyDir: {}
+      - name: config
+        configMap:
+          defaultMode: 420
+          name: {{ $fullname }}
+      - name: filebufferstorage
+        emptyDir: {}
+      {{- if .Values.proxy.enabled }}
+      - name: htpasswd
+        secret:
+          defaultMode: 420
+          secretName: {{ $fullname }}-htpasswd
+      {{- end }}
+      # ElasticSearch secret is copied from openshift-logging/wso2si
+      # by the tekton pipeline
+      - name: clo-default-output-es
+        secret:
+          defaultMode: 420
+          secretName: {{ $fullname }}

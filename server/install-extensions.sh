@@ -18,3 +18,4 @@ done
 
 # Stop WSO2 SI
 /bin/sh ${WSO2_HOME}/bin/server.sh --stop
+chmod -R a+rX ${WSO2_HOME}

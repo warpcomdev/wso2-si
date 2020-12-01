@@ -20,3 +20,10 @@ RUN /bin/sh /opt/install-extensions.sh
 
 # Override default configuration
 ADD deployment.yaml /home/wso2carbon/wso2si/conf/server/deployment.yaml
+
+# Volumes for running as non-root. Move out of the way everything
+# that WSO2 might want to write to.
+VOLUME "/opt/wso2si"
+
+WORKDIR "/opt/wso2si"
+ENTRYPOINT ["/bin/sh", "-c", "if ! [ -d wso2 ]; then cp -r /home/wso2carbon/wso2si/* .; fi; exec bin/server.sh"]
