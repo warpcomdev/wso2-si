@@ -26,8 +26,15 @@ RUN cd /tmp && \
     mv "mysql-connector-java-${MY_VERSION}"/*.jar "/opt/wso2si-tooling/lib/" && \
     rm -rf "mysql-connector-java-${MY_VERSION}"
 
-# Volumes for running as non-root.
+# Volumes for running as non-root. Move out of the way everything
+# that WSO2 might want to write to.
 RUN cd "/opt/wso2si-tooling" && \
+    mkdir wso2/rw && \
+    for i in .bundles .jars lib tmp cdc; do \
+    (mv "$i" wso2/rw || mkdir "wso2/rw/$i") && \
+    ln -s "wso2/rw/$i" "$i"; \
+    done && \
+    chmod -R a+rX . && \
     mv wso2 wso2.golden
 
 VOLUME  "/opt/wso2si-tooling/wso2"
