@@ -1,14 +1,14 @@
 image:
   server:
-    repository: warpcomdev/wso2-si-server
+    repository: warpcomdev/wso2si-server
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   integrator:
-    repository: warpcomdev/wso2-si-integrator
+    repository: warpcomdev/wso2si-integrator
     tag: latest
     pullPolicy: IfNotPresent
   processor:
-    repository: warpcomdev/wso2-si-processor
+    repository: warpcomdev/wso2si-processor
     tag: latest
     pullPolicy: IfNotPresent
 
@@ -37,3 +37,16 @@ resources:
 
 replication:
   initialCount: 1
+
+proxy:
+  enabled: true
+  image: nginx
+  # alpine for bcrypt support in htpasswd
+  tag: 1.19.2-alpine
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "64M"
+    limits:
+      cpu: "250m"
+      memory: "128M"

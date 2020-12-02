@@ -1,0 +1,9 @@
+{{ $fullname := include "wso2si.fullname" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-nginx
+  labels:
+    {{- include "wso2si.labels" . | nindent 4}}
+data:
+  nginx.conf:  {{ .Files.Get "files/nginx.conf" | quote }}

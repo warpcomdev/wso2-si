@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $fullname }}-server
+  name: {{ $fullname }}-integrator
   labels:
     {{- include "wso2si.labels" . | nindent 4}}
 spec:
@@ -14,12 +14,12 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      service: wso2si-server
+      service: wso2si-integrator
       {{- include "wso2si.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        service: wso2si-server
+        service: wso2si-integrator
         {{- include "wso2si.labels" .  | nindent 8 }}
     spec:
       affinity:
@@ -34,32 +34,36 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: server
-        image: {{ .Values.image.server.repository }}:{{ .Values.image.server.tag }}
-        {{- with .Values.resources.server }}
+      {{- if .Values.proxy.enabled }}
+      # Si necesitamos autenticación, insertamos un proxy
+      - name: proxy 
+        image: "{{ .Values.proxy.image }}:{{ .Values.proxy.tag }}"
+        ports:
+        - name: proxy
+          containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /etc/nginx
+          name: config
+        {{- with .Values.proxy.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+      - name: integrator
+        image: {{ .Values.image.integrator.repository }}:{{ .Values.image.integrator.tag }}
+        {{- with .Values.resources.integrator }}
         resources:
           {{- toYaml . | nindent 10 }}
         {{ end }}
         ports:
-        - containerPort: 9443
-          name: https
-        - containerPort: 9090
+        - containerPort: 9390
           name: http
-        - containerPort: 7070
-          name: tcp7070
-        - containerPort: 7443
-          name: tcp7443
-        - containerPort: 9712
-          name: tcp9712
-        - containerPort: 7711
-          name: tcp7711
-        - containerPort: 7611
-          name: tcp7611
         {{- with .Values.livenessProbe }}
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 9090
+            port: 9390
           {{- toYaml . | nindent 10 }}
         {{- end }}
         volumeMounts:
@@ -68,65 +72,75 @@ spec:
       volumes:
       - name: wso2si
         emptyDir: {}
+      - name: config
+        configMap:
+          defaultMode: 0420
+          name: {{ $fullname }}-nginx
 ---
 # ClusterIP service to log into wso2si
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "wso2si.fullname" . }}-server
+  name: {{ include "wso2si.fullname" . }}-integrator
   labels:
-    service: wso2si-server
+    fiware/name: {{ include "wso2si.fullname" . }}
     {{- include "wso2si.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
   - protocol: TCP
-    name: https
-    targetPort: 9443
-    port: 9443
-  - protocol: TCP
     name: http
-    targetPort: 9090
-    port: 9090
+    targetPort: 9390
+    port: 9390
+  {{- if .Values.proxy.enabled }}
   - protocol: TCP
-    name: tcp7070
-    targetPort: 7070
-    port: 7070
-  - protocol: TCP
-    name: tcp7443
-    targetPort: 7443
-    port: 7443
-  - protocol: TCP
-    name: tcp9712
-    targetPort: 9712
-    port: 9712
-  - protocol: TCP
-    name: tcp7711
-    targetPort: 7711
-    port: 7711
-  - protocol: TCP
-    name: tcp7611
-    targetPort: 7611
-    port: 7611
+    name: proxy
+    targetPort: 8080
+    port: 8080
+  {{- end }}
   selector:
-    service: wso2si-server
+    service: wso2si-integrator
     {{- include "wso2si.selectorLabels" . | nindent 4 }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $fullname }}-integrator
+  labels:
+    service: wso2si-integrator
+    {{- include "wso2si.labels" . | nindent 4 }}
+spec:
+  port:
+    {{- if .Values.proxy.enabled }}
+    targetPort: proxy
+    {{- else }}
+    targetPort: http
+    {{- end }}
+  to:
+    kind: Service
+    name: {{ $fullname }}-integrator
+  tls:
+    termination: Edge
+    insecureEdgeTerminationPolicy: Allow
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $fullname }}-server
+  name: {{ $fullname }}-integrator
   labels:
-    service: wso2si-server
+    service: wso2si-integrator
     {{- include "wso2si.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      service: wso2si-server
+      service: wso2si-integrator
       {{- include "wso2si.selectorLabels" . | nindent 6 }}
   policyTypes:
   - Ingress
   ingress:
+  - from:
+    - namespaceSelector: {}
+    ports: []
   - from:
     - podSelector: {}
     ports: []

@@ -44,14 +44,14 @@ wso2.transport.http:
       id: "default"
       host: "0.0.0.0"
       port: 9090
-    # -
-    #   id: "msf4j-https"
-    #   host: "0.0.0.0"
-    #   port: 9443
-    #   scheme: https
-    #   keyStoreFile: "${carbon.home}/resources/security/wso2carbon.jks"
-    #   keyStorePassword: wso2carbon
-    #   certPass: wso2carbon
+    -
+      id: "msf4j-https"
+      host: "0.0.0.0"
+      port: 9443
+      scheme: https
+      keyStoreFile: "${carbon.home}/resources/security/wso2carbon.jks"
+      keyStorePassword: wso2carbon
+      certPass: wso2carbon
 
   senderConfigurations:
     -
@@ -74,14 +74,14 @@ siddhi.stores.query.api:
       id: "default"
       host: "0.0.0.0"
       port: 7070
-    # -
-    #   id: "msf4j-https"
-    #   host: "0.0.0.0"
-    #   port: 7443
-    #   scheme: https
-    #   keyStoreFile: "${carbon.home}/resources/security/wso2carbon.jks"
-    #   keyStorePassword: wso2carbon
-    #   certPass: wso2carbon
+    -
+      id: "msf4j-https"
+      host: "0.0.0.0"
+      port: 7443
+      scheme: https
+      keyStoreFile: "${carbon.home}/resources/security/wso2carbon.jks"
+      keyStorePassword: wso2carbon
+      certPass: wso2carbon
 
   # Configuration used for the databridge communication
 databridge.config:
@@ -421,7 +421,7 @@ auth.configs:
            displayName: admin
 
   # Sample of deployment.config for Two node HA
-#deployment.config:
+#deployment.config
 #  type: ha
 #  passiveNodeDetailsWaitTimeOutMillis: 300000
 #  passiveNodeDetailsRetrySleepTimeMillis: 500
