@@ -1,0 +1,198 @@
+{{ $fullname := include "wso2si.fullname" . }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-miserver
+  labels:
+    {{- include "wso2si.labels" . | nindent 4}}
+spec:
+  replicas: {{ .Values.replication.initialCount }}
+  {{- with .Values.replication.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      service: wso2si-miserver
+      {{- include "wso2si.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        service: wso2si-miserver
+        {{- include "wso2si.labels" .  | nindent 8 }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              {{- include "wso2si.selectorExpressions" . | nindent 14 }}
+            topologyKey: kubernetes.io/hostname
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+      - name: mivolume
+        image: {{ .Values.image.miserver.repository }}:{{ .Values.image.miserver.tag }}
+        {{- with .Values.resources.miserver }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{ end }}
+        command:
+        - /bin/sh
+        args:
+        - -c
+        - "if ! [ -d /opt/wso2mi/wso2mi-1.3.0-SNAPSHOT ]; then cp -r /home/wso2carbon/* /opt/wso2mi; fi"
+        volumeMounts:
+        - name: wso2mi
+          mountPath: /opt/wso2mi
+      - name: dashvolume
+        image: {{ .Values.image.midashboard.repository }}:{{ .Values.image.midashboard.tag }}
+        {{- with .Values.resources.midashboard }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{ end }}
+        command:
+        - /bin/sh
+        args:
+        - -c
+        - "if ! [ -d /opt/wso2mi/wso2mi-monitoring-dashboard-1.2.1-SNAPSHOT ]; then cp -r /home/wso2carbon/* /opt/wso2mi; fi"
+        volumeMounts:
+        - name: wso2mi
+          mountPath: /opt/wso2mi
+      containers:
+      # Quick hack to expose https port with fake cert as http.
+      - name: proxy
+        image: "{{ .Values.proxy.image }}:{{ .Values.proxy.tag }}"
+        ports:
+        - name: proxy
+          containerPort: 9090
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /etc/nginx
+          name: config
+        {{- with .Values.proxy.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      - name: server
+        image: {{ .Values.image.miserver.repository }}:{{ .Values.image.miserver.tag }}
+        {{- with .Values.resources.miserver }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{ end }}
+        env:
+        - name: WORKING_DIRECTORY
+          value: /opt/wso2mi
+        - name: WSO2_SERVER_HOME
+          value: /opt/wso2mi/wso2mi-1.3.0-SNAPSHOT
+        ports:
+        - containerPort: 8290
+          name: tcp8290
+        - containerPort: 8253
+          name: tcp8253
+        - containerPort: 9164
+          name: tcp9164
+        volumeMounts:
+        - name: wso2mi
+          mountPath: /opt/wso2mi
+      - name: dashboard
+        image: {{ .Values.image.midashboard.repository }}:{{ .Values.image.midashboard.tag }}
+        {{- with .Values.resources.midashboard }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{ end }}
+        env:
+        - name: WORKING_DIRECTORY
+          value: /opt/wso2mi
+        - name: WSO2_SERVER_HOME
+          value: /opt/wso2mi/wso2mi-monitoring-dashboard-1.2.1-SNAPSHOT 
+        ports:
+        - containerPort: 9743
+          name: https
+        volumeMounts:
+        - name: wso2mi
+          mountPath: /opt/wso2mi
+      volumes:
+      - name: wso2mi
+        emptyDir: {}
+      - name: config
+        configMap:
+          defaultMode: 0420
+          name: {{ $fullname }}-minginx
+---
+# ClusterIP service to log into wso2si
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "wso2si.fullname" . }}-miserver
+  labels:
+    service: wso2si-miserver
+    {{- include "wso2si.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    name: https
+    targetPort: 9743
+    port: 9743
+  - protocol: TCP
+    name: http
+    targetPort: 9090
+    port: 9090
+  - protocol: TCP
+    name: tcp9164
+    targetPort: 9164
+    port: 9164
+  - protocol: TCP
+    name: tcp8290
+    targetPort: 8290
+    port: 8290
+  - protocol: TCP
+    name: tcp8253
+    targetPort: 8253
+    port: 8253
+  selector:
+    service: wso2si-miserver
+    {{- include "wso2si.selectorLabels" . | nindent 4 }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $fullname }}-miserver
+  labels:
+    service: wso2si-miserver
+    {{- include "wso2si.labels" . | nindent 4 }}
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: {{ $fullname }}-miserver
+  tls:
+    termination: Edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-miserver
+  labels:
+    service: wso2si-miserver
+    {{- include "wso2si.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      service: wso2si-miserver
+      {{- include "wso2si.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}
+    ports: []
+  - from:
+    - namespaceSelector: {}
+    ports: []

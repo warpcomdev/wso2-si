@@ -1,4 +1,16 @@
 image:
+  eiserver:
+    repository: wso2/wso2ei-integrator
+    tag: latest
+    pullPolicy: IfNotPresent
+  miserver:
+    repository: wso2/wso2mi
+    tag: 1.3.0-SNAPSHOT
+    pullPolicy: IfNotPresent
+  midashboard:
+    repository: wso2/wso2mi-dashboard
+    tag: 1.2.1-SNAPSHOT
+    pullPolicy: IfNotPresent
   server:
     repository: warpcomdev/wso2si-server
     tag: latest
@@ -15,7 +27,7 @@ image:
 resources:
   server:
     requests:
-      memory: 1Gi
+      memory: 2Gi
       cpu: 500m
     limits:
       memory: 4Gi
@@ -30,6 +42,20 @@ resources:
   processor:
     requests:
       memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: "2"
+  eiserver:
+    requests:
+      memory: 2Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: "2"
+  miserver:
+    requests:
+      memory: 2Gi
       cpu: 500m
     limits:
       memory: 4Gi

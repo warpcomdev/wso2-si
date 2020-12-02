@@ -7,3 +7,21 @@ metadata:
     {{- include "wso2si.labels" . | nindent 4}}
 data:
   nginx.conf:  {{ .Files.Get "files/nginx.conf" | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-einginx
+  labels:
+    {{- include "wso2si.labels" . | nindent 4}}
+data:
+  nginx.conf:  {{ .Files.Get "files/einginx.conf" | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-minginx
+  labels:
+    {{- include "wso2si.labels" . | nindent 4}}
+data:
+  nginx.conf:  {{ .Files.Get "files/minginx.conf" | quote }}

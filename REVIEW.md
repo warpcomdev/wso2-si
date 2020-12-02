@@ -12,3 +12,7 @@ Extensiones de Siddhi 5: https://siddhi.io/en/v5.0/docs/extensions/
 
 about:config
 network.websocket.allowInsecureFromHTTPS	true
+
+# Undeploy de aplicaciones
+
+https://stackoverflow.com/questions/56888803/is-it-possible-to-undeploy-an-wso2-app-with-the-editor
