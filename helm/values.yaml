@@ -1,11 +1,11 @@
 image:
   eiserver:
     repository: wso2/wso2ei-integrator
-    tag: latest
+    tag: "latest"
     pullPolicy: IfNotPresent
   miserver:
-    repository: wso2/wso2mi
-    tag: 1.3.0-SNAPSHOT
+    repository: warpcomdev/wso2mi-server
+    tag: "latest"
     pullPolicy: IfNotPresent
   midashboard:
     repository: wso2/wso2mi-dashboard
@@ -13,15 +13,15 @@ image:
     pullPolicy: IfNotPresent
   server:
     repository: warpcomdev/wso2si-server
-    tag: latest
+    tag: "latest"
     pullPolicy: Always
   integrator:
     repository: warpcomdev/wso2si-integrator
-    tag: latest
+    tag: "latest"
     pullPolicy: IfNotPresent
   processor:
     repository: warpcomdev/wso2si-processor
-    tag: latest
+    tag: "latest"
     pullPolicy: IfNotPresent
 
 resources:
