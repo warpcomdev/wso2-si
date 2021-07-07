@@ -1,8 +1,8 @@
 # Use jdk 8 for nashorn (javascript) support, deprecated in jdk11
 FROM openjdk:8
 
-ENV WSO2SI_RELEASE_FULL 1.1.0-rc3
-ENV WSO2SI_RELEASE 1.1.0
+ENV WSO2SI_RELEASE_FULL 4.0.0
+ENV WSO2SI_RELEASE 4.0.0
 
 RUN mkdir -p /opt/golden && \
     cd /opt/golden && \
@@ -12,7 +12,7 @@ ENV TF_VERSION 2.0.1
 RUN cd /opt/golden && \
     wget "https://repo1.maven.org/maven2/io/siddhi/extension/execution/tensorflow/siddhi-execution-tensorflow/${TF_VERSION}/siddhi-execution-tensorflow-${TF_VERSION}.jar"
 
-ENV PG_VERSION 42.2.18
+ENV PG_VERSION 42.2.22
 RUN cd /opt/golden && \
     wget "https://jdbc.postgresql.org/download/postgresql-${PG_VERSION}.jar"
 

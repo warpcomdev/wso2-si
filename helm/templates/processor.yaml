@@ -133,7 +133,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      service: processor
+      service: wso2si-processor
       {{- include "wso2si.selectorLabels" . | nindent 6 }}
   policyTypes:
   - Ingress
